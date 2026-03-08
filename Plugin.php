@@ -58,7 +58,7 @@ class Plugin implements PluginInterface
 
         Admin::pluginHandle()->callIp = [__CLASS__, 'injectAdmin'];
 
-        \Typecho\Plugin::factory(Archive::class)->___location = [__CLASS__, 'render'];
+        Archive::pluginHandle()->___location = [__CLASS__, 'render'];
 
         return _t('插件已激活，定位钩子已生效');
     }
