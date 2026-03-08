@@ -161,35 +161,28 @@ class Plugin implements PluginInterface
     /**
      * 渲染评论地理位置（___location 钩子回调）
      *
+     * 由 Widget::__get() 通过 Plugin::call('___location', $this) 触发，
+     * 框架固定只传入 $archive 一个参数，符合 call 钩子规范。
+     *
      * @param Archive $archive 评论归档对象
-     * @param string $template 输出模板
-     * @return string
+     * @return string 国家/地区中文名，查询失败时返回 '未知'
      */
-    public static function render($archive, string $template): string
+    public static function render(Archive $archive): string
     {
-        $template = $template ?? '%s';
         $ip = $archive->ip;
 
         if (empty($ip) || !filter_var($ip, FILTER_VALIDATE_IP)) {
-            return sprintf($template, '未知');
+            return '未知';
         }
 
         $result = json_decode(self::lookupIp($ip), true);
-        if ($result['code'] !== '200') {
-            return sprintf($template, '未知');
+        if (($result['code'] ?? '') !== '200') {
+            return '未知';
         }
 
-        $record = $result['data'];
-        $countryCode = $record['country_code'] ?? '';
+        $countryCode = $result['data']['country_code'] ?? '';
+        $countryZh = self::iso2zh($countryCode);
 
-        try {
-            $countryZh = self::iso2zh($countryCode);
-            if (empty($countryZh)) {
-                return sprintf($template, '未知');
-            }
-            return sprintf($template, $countryZh);
-        } catch (\Exception $e) {
-            return sprintf($template, '未知');
-        }
+        return $countryZh ?: '未知';
     }
 }
