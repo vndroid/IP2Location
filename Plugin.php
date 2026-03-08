@@ -64,21 +64,21 @@ class Plugin implements PluginInterface
     /**
      * 禁用插件方法,如果禁用失败,直接抛出异常
      */
-    public static function deactivate()
+    public static function deactivate(): void
     {
     }
 
     /**
      * 获取插件配置面板
      */
-    public static function config(Form $form)
+    public static function config(Form $form): void
     {
     }
 
     /**
      * 个人用户的配置面板
      */
-    public static function personalConfig(Form $form)
+    public static function personalConfig(Form $form): void
     {
     }
 
@@ -116,9 +116,8 @@ class Plugin implements PluginInterface
     {
         $result = json_decode(self::lookupIp($comments->ip), true);
 
-        if ($result['code'] === '200') {
-            $record = $result['data'];
-            $countryCode = $record['country_code'] ?? '';
+        if (is_array($result) && ($result['code'] ?? '') === '200') {
+            $countryCode = $result['data']['country_code'] ?? '';
             $address = self::iso2zh($countryCode);
         } else {
             $address = '未知';
