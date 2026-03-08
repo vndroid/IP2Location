@@ -90,18 +90,18 @@ class Plugin implements PluginInterface
      */
     public static function iso2zh(string $code): string
     {
-        if (empty($code)) {
+        if (!preg_match('/^[A-Za-z]{2}$/', $code)) {
             return '未知';
         }
 
-        $zhName = \Locale::getDisplayRegion('-' . $code, 'zh_CN');
+        $zhName = \Locale::getDisplayRegion('-' . strtoupper($code), 'zh_CN');
 
-        // 去掉"特别行政区"后缀（如"中国香港特别行政区"→"中国香港"）
+        // 去掉"特别行政区"后缀（如"中国香港特别行政区"→"中国香港"）, 因为在评论列表中显示过长会导致布局问题
         $zhName = preg_replace('/特别行政区$/', '', $zhName);
 
         // 超过6个字符时截断
-        if (mb_strlen($zhName, 'UTF-8') > 5) {
-            $zhName = mb_substr($zhName, 0, 5, 'UTF-8');
+        if (mb_strlen($zhName, 'UTF-8') > 6) {
+            $zhName = mb_substr($zhName, 0, 6, 'UTF-8');
         }
 
         return $zhName;
