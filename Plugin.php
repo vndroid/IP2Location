@@ -5,9 +5,11 @@ namespace TypechoPlugin\IP2Location;
 require_once __DIR__ . '/vendor/autoload.php';
 
 use MaxMind\Db\Reader;
+use Typecho\Db\Exception as DbException;
 use Typecho\Plugin\PluginInterface;
 use Typecho\Plugin\Exception as PluginException;
 use Typecho\Widget\Helper\Form;
+use Widget\User;
 use Widget\Base\Comments;
 use Widget\Comments\Admin;
 use Widget\Comments\Archive;
@@ -165,9 +167,14 @@ class Plugin implements PluginInterface
      *
      * @param Archive $archive 评论归档对象
      * @return string 国家/地区中文名，查询失败时返回 '未知'
+     * @throws DbException
      */
     public static function render(Archive $archive): string
     {
+        if (!User::alloc()->hasLogin()) {
+            return '隐藏';
+        }
+
         $ip = $archive->ip;
 
         if (empty($ip) || !filter_var($ip, FILTER_VALIDATE_IP)) {
