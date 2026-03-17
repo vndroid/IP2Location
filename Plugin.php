@@ -23,7 +23,7 @@ if (!defined('__TYPECHO_ROOT_DIR__')) {
  *
  * @package IP2Location
  * @author Vex
- * @version 0.0.1
+ * @version 0.1.0
  * @link https://github.com/vndroid/IP2Location
  */
 class Plugin implements PluginInterface
