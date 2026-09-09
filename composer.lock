@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "4511de7d9afafaa98141b45a7d3a06dd",
+    "content-hash": "fdfd1534b336727ebe19383ca518e446",
     "packages": [
         {
             "name": "maxmind-db/reader",
@@ -77,7 +77,10 @@
     "stability-flags": {},
     "prefer-stable": false,
     "prefer-lowest": false,
-    "platform": {},
+    "platform": {
+        "php": ">=8.2",
+        "ext-intl": "*"
+    },
     "platform-dev": {},
     "plugin-api-version": "2.9.0"
 }

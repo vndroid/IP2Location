@@ -1,6 +1,13 @@
 # IP2Location
 
-评论地址解析插件，基于 [ICU4C](https://android.googlesource.com/platform/external/icu4c/%2B/donut-release/data/locales/zh.txt) 开发，支持 Typecho 1.2 及以上版本。
+评论地址解析插件，基于 [ICU4C](https://android.googlesource.com/platform/external/icu4c/%2B/donut-release/data/locales/zh.txt) 开发。
+
+## 环境要求
+
+- PHP 8.2+；
+- Typecho 1.2+；
+- PHP `intl` 扩展；
+- Composer（用于安装 MaxMind DB Reader 依赖）。
 
 ## 插件亮点
 

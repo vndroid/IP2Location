@@ -23,13 +23,13 @@ if (!defined('__TYPECHO_ROOT_DIR__')) {
  *
  * @package IP2Location
  * @author Vex
- * @version 0.1.0
+ * @version 0.1.1
  * @link https://github.com/vndroid/IP2Location
  */
 class Plugin implements PluginInterface
 {
-    private const string DB_NAME = 'ipinfo_lite.mmdb';
-    private const string DB_FILE = __DIR__ . '/' . self::DB_NAME;
+    private const DB_NAME = 'ipinfo_lite.mmdb';
+    private const DB_FILE = __DIR__ . '/' . self::DB_NAME;
 
     /**
      * 激活插件方法,如果激活失败,直接抛出异常
@@ -41,7 +41,7 @@ class Plugin implements PluginInterface
     {
         // 验证 MMDB 文件存在
         if (!file_exists(self::DB_FILE)) {
-            throw new PluginException(_t('激活失败：数据库文件不存在，请将 %s 放置到插件目录下'), self::DB_NAME);
+            throw new PluginException(_t('激活失败：数据库文件不存在，请将 %s 放置到插件目录下', self::DB_NAME));
         }
 
         // 验证 MMDB 文件格式

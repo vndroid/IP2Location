@@ -1,5 +1,7 @@
 {
     "require": {
+        "php": ">=8.2",
+        "ext-intl": "*",
         "maxmind-db/reader": "^1.13.1"
     }
 }
