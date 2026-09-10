@@ -2,8 +2,6 @@
 
 namespace TypechoPlugin\IP2Location;
 
-require_once __DIR__ . '/vendor/autoload.php';
-
 use MaxMind\Db\Reader;
 use Typecho\Db\Exception as DbException;
 use Typecho\Plugin\PluginInterface;
@@ -28,8 +26,14 @@ if (!defined('__TYPECHO_ROOT_DIR__')) {
  */
 class Plugin implements PluginInterface
 {
+    private const AUTOLOAD_FILE = __DIR__ . '/vendor/autoload.php';
     private const DB_NAME = 'ipinfo_lite.mmdb';
     private const DB_FILE = __DIR__ . '/' . self::DB_NAME;
+
+    /**
+     * 当前请求内复用的 MMDB Reader
+     */
+    private static ?Reader $reader = null;
 
     /**
      * 激活插件方法,如果激活失败,直接抛出异常
@@ -39,6 +43,8 @@ class Plugin implements PluginInterface
      */
     public static function activate(): string
     {
+        self::loadDependencies();
+
         // 验证 MMDB 文件存在
         if (!file_exists(self::DB_FILE)) {
             throw new PluginException(_t('激活失败：数据库文件不存在，请将 %s 放置到插件目录下', self::DB_NAME));
@@ -82,6 +88,42 @@ class Plugin implements PluginInterface
      */
     public static function personalConfig(Form $form): void
     {
+    }
+
+    /**
+     * 加载 Composer 依赖
+     *
+     * @throws PluginException
+     */
+    private static function loadDependencies(): void
+    {
+        if (class_exists(Reader::class, false)) {
+            return;
+        }
+
+        if (!is_file(self::AUTOLOAD_FILE)) {
+            throw new PluginException(_t('缺少 Composer 依赖，请在插件目录下运行 composer install'));
+        }
+
+        try {
+            require_once self::AUTOLOAD_FILE;
+        } catch (\Throwable $e) {
+            throw new PluginException(_t('无法加载 Composer 依赖：%s', $e->getMessage()));
+        }
+
+        if (!class_exists(Reader::class)) {
+            throw new PluginException(_t('Composer 依赖不完整，请在插件目录下重新运行 composer install'));
+        }
+    }
+
+    /**
+     * 获取当前请求共用的 MMDB Reader
+     */
+    private static function getReader(): Reader
+    {
+        self::loadDependencies();
+
+        return self::$reader ??= new Reader(self::DB_FILE);
     }
 
     /**
@@ -145,9 +187,7 @@ class Plugin implements PluginInterface
         }
 
         try {
-            $reader = new Reader(self::DB_FILE);
-            $record = $reader->get($ip);
-            $reader->close();
+            $record = self::getReader()->get($ip);
 
             if (!is_array($record)) {
                 return json_encode(['code' => '404', 'error' => 'IP address not found in database'], JSON_UNESCAPED_UNICODE);
@@ -155,6 +195,7 @@ class Plugin implements PluginInterface
 
             return json_encode(['code' => '200', 'data' => $record], JSON_UNESCAPED_UNICODE);
         } catch (\Exception $e) {
+            self::$reader = null;
             return json_encode(['code' => '500', 'error' => $e->getMessage()], JSON_UNESCAPED_UNICODE);
         }
     }
