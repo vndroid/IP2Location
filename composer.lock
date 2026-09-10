@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "fdfd1534b336727ebe19383ca518e446",
+    "content-hash": "ab6f6fe4fd7a760f97a45aa676b53783",
     "packages": [
         {
             "name": "maxmind-db/reader",
