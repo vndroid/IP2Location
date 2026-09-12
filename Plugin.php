@@ -36,6 +36,16 @@ class Plugin implements PluginInterface
     private static ?Reader $reader = null;
 
     /**
+     * @var array<string, array{code: string, data?: array, error?: string}>
+     */
+    private static array $lookupCache = [];
+
+    /**
+     * @var array<string, string>
+     */
+    private static array $countryNameCache = [];
+
+    /**
      * 激活插件方法,如果激活失败,直接抛出异常
      *
      * @return string
@@ -138,17 +148,28 @@ class Plugin implements PluginInterface
             return '未知';
         }
 
-        $zhName = \Locale::getDisplayRegion('-' . strtoupper($code), 'zh_CN');
+        $code = strtoupper($code);
+        if (isset(self::$countryNameCache[$code])) {
+            return self::$countryNameCache[$code];
+        }
+
+        $zhName = \Locale::getDisplayRegion('-' . $code, 'zh_CN');
+        if (!is_string($zhName) || $zhName === '') {
+            return self::$countryNameCache[$code] = '未知';
+        }
 
         // 去掉"特别行政区"后缀（如"中国香港特别行政区"→"中国香港"）, 因为在评论列表中显示过长会导致布局问题
         $zhName = preg_replace('/特别行政区$/', '', $zhName);
+        if (!is_string($zhName) || $zhName === '') {
+            return self::$countryNameCache[$code] = '未知';
+        }
 
         // 超过6个字符时截断
         if (mb_strlen($zhName, 'UTF-8') > 6) {
             $zhName = mb_substr($zhName, 0, 6, 'UTF-8');
         }
 
-        return $zhName;
+        return self::$countryNameCache[$code] = $zhName;
     }
 
     /**
@@ -158,9 +179,9 @@ class Plugin implements PluginInterface
      */
     public static function injectAdmin(Comments $comments): void
     {
-        $result = json_decode(self::lookupIp($comments->ip), true);
+        $result = self::lookupResult($comments->ip);
 
-        if (is_array($result) && ($result['code'] ?? '') === '200') {
+        if (($result['code'] ?? '') === '200') {
             $countryCode = $result['data']['country_code'] ?? '';
             $address = self::iso2zh($countryCode);
         } else {
@@ -182,21 +203,46 @@ class Plugin implements PluginInterface
      */
     public static function lookupIp(string $ip): string
     {
+        try {
+            return json_encode(
+                self::lookupResult($ip),
+                JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE | JSON_THROW_ON_ERROR
+            );
+        } catch (\JsonException) {
+            return '{"code":"500","error":"Failed to encode lookup result"}';
+        }
+    }
+
+    /**
+     * 通过本地数据库查询 IP 归属地，并在当前请求内缓存结果
+     *
+     * @param string $ip IP 地址
+     * @return array{code: string, data?: array, error?: string}
+     */
+    private static function lookupResult(string $ip): array
+    {
         if (!filter_var($ip, FILTER_VALIDATE_IP)) {
-            return json_encode(['code' => '401', 'error' => 'Invalid IP address'], JSON_UNESCAPED_UNICODE);
+            return ['code' => '401', 'error' => 'Invalid IP address'];
+        }
+
+        if (isset(self::$lookupCache[$ip])) {
+            return self::$lookupCache[$ip];
         }
 
         try {
             $record = self::getReader()->get($ip);
 
             if (!is_array($record)) {
-                return json_encode(['code' => '404', 'error' => 'IP address not found in database'], JSON_UNESCAPED_UNICODE);
+                return self::$lookupCache[$ip] = [
+                    'code' => '404',
+                    'error' => 'IP address not found in database',
+                ];
             }
 
-            return json_encode(['code' => '200', 'data' => $record], JSON_UNESCAPED_UNICODE);
+            return self::$lookupCache[$ip] = ['code' => '200', 'data' => $record];
         } catch (\Exception $e) {
             self::$reader = null;
-            return json_encode(['code' => '500', 'error' => $e->getMessage()], JSON_UNESCAPED_UNICODE);
+            return ['code' => '500', 'error' => $e->getMessage()];
         }
     }
 
@@ -222,7 +268,7 @@ class Plugin implements PluginInterface
             return '未知';
         }
 
-        $result = json_decode(self::lookupIp($ip), true);
+        $result = self::lookupResult($ip);
         if (($result['code'] ?? '') !== '200') {
             return '未知';
         }
